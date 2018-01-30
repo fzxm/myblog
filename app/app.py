@@ -19,6 +19,7 @@ from jinja2 import Environment, FileSystemLoader
 import orm
 from coroweb import add_routes, add_static
 from handlers import cookie2user, COOKIE_NAME
+from config import configs
 
 
 def init_jinja2(app, **kw):
@@ -149,8 +150,7 @@ def datetime_filter(t):
 
 @asyncio.coroutine
 def init(loop):
-    yield from orm.create_pool(loop=loop, host='127.0.0.1', port=3306, user='www-data', password='www-data',
-                               db='myblog')
+    yield from orm.create_pool(loop=loop, **configs.db)
     app = web.Application(loop=loop, middlewares=[
         logger_factory, response_factory
     ])
