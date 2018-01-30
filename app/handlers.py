@@ -23,18 +23,19 @@ COOKIE_NAME = 'awesession'
 _COOKIE_KEY = configs.session.secret
 
 
-async def user2cookie(user, max_age):
+def user2cookie(user, max_age):
     '''
     Generate cookie str by user.
     '''
     # build cookie string by: id-expires-sha1
     expires = str(int(time.time() + max_age))
-    s = '%s-%s-%s-%s' % (user.id, user.passwd, expires, _COOKIE_KEY)
+    s = '%s-%s-%s-%s' % (user.id, user.password, expires, _COOKIE_KEY)
     L = [user.id, expires, hashlib.sha1(s.encode('utf-8')).hexdigest()]
     return '-'.join(L)
 
 
-async def cookie2user(cookie_str):
+@asyncio.coroutine
+def cookie2user(cookie_str):
     '''
     Parse cookie and load user if cookie is valid.
     '''
@@ -47,7 +48,7 @@ async def cookie2user(cookie_str):
         uid, expires, sha1 = L
         if int(expires) < time.time():
             return None
-        user = await User.find(uid)
+        user = yield from User.find(uid)
         if user is None:
             return None
         s = '%s-%s-%s-%s' % (uid, user.password, expires, _COOKIE_KEY)
@@ -62,9 +63,8 @@ async def cookie2user(cookie_str):
 
 
 @get('/')
-async def index(request):
+def index(request):
     summary = '我的第一篇博客'
-    users = await User.findAll()
     blogs = [
         Blog(id='1', name='Android', summary=summary, created_at=time.time() - 120),
         Blog(id='2', name='Python', summary=summary, created_at=time.time() - 3600),
@@ -84,7 +84,7 @@ async def register():
 
 
 @get('/signin')
-async def signin():
+def signin():
     return {
         '__template__': 'signin.html'
     }
@@ -99,12 +99,12 @@ async def api_get_users():
 
 
 @post('/api/authenticate')
-async def authenticate(*, email, password):
+def authenticate(*, email, password):
     if not email:
         raise APIValueError('email', 'Invalid email.')
     if not password:
         raise APIValueError('password', 'Invalid password.')
-    users = await User.findAll('email=?, [email]')
+    users = yield from User.findAll('email=?', [email])
     if len(users) == 0:
         raise APIValueError('email', 'Email not exist.')
     user = users[0]
@@ -123,7 +123,7 @@ async def authenticate(*, email, password):
 
 
 @get('/signout')
-async def signout(request):
+def signout(request):
     referer = request.headers.get('Referer')
     r = web.HTTPFound(referer or '/')
     r.set_cookie(COOKIE_NAME, '-daleted-', max_age=0, httponly=True)
@@ -144,7 +144,8 @@ async def api_register_user(*, email, name, password):
         raise APIError('register:failed', 'email', 'Email is already in use.')
     uid = next_id()
     sha1_password = '%s:%s' % (uid, password)
-    user = User(id=uid, name=name.strip(), email=email, password=hashlib.sha1(sha1_password.encode('utf-8')).hexdigest(),
+    user = User(id=uid, name=name.strip(), email=email,
+                password=hashlib.sha1(sha1_password.encode('utf-8')).hexdigest(),
                 image='http://www.gravatar.com/avatar/%s?d=mm&s=120' % hashlib.md5(email.encode('utf-8')).hexdigest())
     await user.save()
     r = web.Response()

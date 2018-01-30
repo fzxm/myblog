@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="uk-height-1-1">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8"/>
     <title>登录 - fzxm的个人博客</title>
     <link rel="stylesheet" href="/static/css/uikit.min.css">
     <link rel="stylesheet" href="/static/css/uikit.gradient.min.css">
@@ -11,13 +11,12 @@
     <script src="/static/js/vue.min.js"></script>
     <script src="/static/js/awesome.js"></script>
     <script>
-
         $(function () {
             var vmAuth = new Vue({
                 el: '#vm',
                 data: {
                     email: '',
-                    passwd: ''
+                    password: ''
                 },
                 methods: {
                     submit: function (event) {
@@ -27,7 +26,7 @@
                             email = this.email.trim().toLowerCase(),
                             data = {
                                 email: email,
-                                passwd: this.passwd === '' ? '' : CryptoJS.SHA1(email + ':' + this.passwd).toString()
+                                password: this.password === '' ? '' : CryptoJS.SHA1(email + ':' + this.password).toString()
                             };
                         $form.postJSON('/api/authenticate', data, function (err, result) {
                             if (!err) {
@@ -57,7 +56,7 @@
             <div class="uk-form-row">
                 <div class="uk-form-icon uk-width-1-1">
                     <i class="uk-icon-lock"></i>
-                    <input v-model="passwd" name="passwd" type="password" placeholder="密码" maxlength="50"
+                    <input v-model="password" name="password" type="password" placeholder="密码" maxlength="50"
                            class="uk-width-1-1 uk-form-large">
                 </div>
             </div>
@@ -69,6 +68,5 @@
         </form>
     </div>
 </div>
-</body>
 </body>
 </html>
